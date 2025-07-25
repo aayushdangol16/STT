@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Wav2Vec2 Transcriber</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 2em auto;
+            padding: 1em;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            margin-bottom: 1em;
+            display: flex;
+            gap: 0.5em;
+            align-items: center;
+            justify-content: center;
+        }
+        select, input[type="file"] {
+            padding: 0.4em;
+            font-size: 1em;
+        }
+        button {
+            padding: 0.5em 1em;
+            font-size: 1em;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            background: white;
+            border-radius: 4px;
+            padding: 1em;
+            font-family: monospace;
+            white-space: pre-wrap;
+            min-height: 100px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        #time-taken {
+            margin-top: 0.5em;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wav2Vec2 Transcriber</h1>
+    <form id="upload-form" enctype="multipart/form-data">
+        <select name="model_name" required>
+            <option value="" disabled selected>Select a model</option>
+            <!-- Models will be inserted dynamically -->
+        </select>
+        <input type="file" name="file" accept="audio/wav" required />
+        <button type="submit">Transcribe</button>
+    </form>
+
+    <pre id="result">Your transcription will appear here...</pre>
+    <div id="time-taken"></div>
+
+    <script>
+        // Populate model dropdown from server data
+        const modelNames = {{ model_names | tojson }};
+        const select = document.querySelector("select[name='model_name']");
+        modelNames.forEach(name => {
+            const opt = document.createElement("option");
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+        });
+
+        document.getElementById('upload-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            document.getElementById('result').textContent = "Transcribing...";
+            document.getElementById('time-taken').textContent = "";
+            try {
+                const response = await fetch('/transcribe/', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.error) {
+                    document.getElementById('result').textContent = `Error: ${data.error}`;
+                    return;
+                }
+                document.getElementById('result').textContent = data.transcription || 'No transcription result';
+                if (data.time_taken) {
+                    document.getElementById('time-taken').textContent = `Transcription took ${data.time_taken} seconds`;
+                }
+            } catch (error) {
+                document.getElementById('result').textContent = "Error during transcription.";
+                document.getElementById('time-taken').textContent = "";
+            }
+        };
+    </script>
+</body>
+</html>

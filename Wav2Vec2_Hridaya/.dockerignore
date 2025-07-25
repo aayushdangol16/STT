@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pkl
+*.mp3
+*.zip
+*.tar
+*.gz
+*.pt
+*.onnx
+venv39/
+.git/
+datasets/
